@@ -1,9 +1,9 @@
 #ifndef _ZHY_H_
 #define _ZHY_H_
 
-#include"../src/ssd1306.h"
+#include"../src/ssd1306.hpp"
 
-void drawzhy(SSD1306 &oled,int x=0,int y=0){
+void draw_zhy(SSD1306 &oled,int x=0,int y=0){
     
     const bool zhy[15][48]={
         {0,1,1,1,1,1,0,1,1,0,0,0,1,1,0,0, 0,1,1,1,1,1,1,0,1,1,1,1,1,1,0,0, 0,1,1,0,1,1,0,1,1,1,1,1,1,1,1,0},
@@ -27,9 +27,9 @@ void drawzhy(SSD1306 &oled,int x=0,int y=0){
     for(int x=0;x<48;x++){
         for(int y=0;y<15;y++){
             if(zhy[y][x]){
-                oled.setPixel(x,y,1);
+                oled.set_pixel(x,y,1);
             }else{
-                oled.setPixel(x,y,0);
+                oled.set_pixel(x,y,0);
             }
         }
     }

@@ -6,8 +6,8 @@ private:
     int i2c_fd;
     unsigned char buffer[128 * 64 / 8]; // 128x64
 
-    bool writeCommand(unsigned char cmd);
-    bool writeData(const unsigned char* data, int len);
+    bool write_command(unsigned char cmd);
+    bool write_data(const unsigned char* data, int len);
 
 public:
     SSD1306(const char* i2c_device = "/dev/i2c-1", int addr = 0x3C);
@@ -15,7 +15,7 @@ public:
 
     bool init();
     void clear();
-    void setPixel(int x, int y, bool on = true);
+    void set_pixel(int x, int y, bool on = true);
     void display(); 
 
 };

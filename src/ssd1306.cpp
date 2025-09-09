@@ -1,24 +1,26 @@
-#include "ssd1306.h"
+#include "ssd1306.hpp"
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include <linux/i2c-dev.h>
 #include <cstring>
 #include <iostream>
+#include <iomanip>
 
 SSD1306::SSD1306(const char* device, int addr) : i2c_fd(-1) {
     i2c_fd = open(device, O_RDWR);
     if (i2c_fd < 0) {
-        std::cerr << "Can't open I2C device\n";
+        std::cerr << "ERROR:Can't open I2C device\n";
         return;
     }
 
     if (ioctl(i2c_fd, I2C_SLAVE, addr) < 0) {
-        std::cerr << "Can't set I2C address\n";
+        std::cerr << "ERROE:Can't set I2C address\n";
         close(i2c_fd);
         i2c_fd = -1;
         return;
     }
+    std::clog<<"OK:Open I2C device and set it's address successfully\n";
 
     memset(buffer, 0, sizeof(buffer));
 }
@@ -26,20 +28,36 @@ SSD1306::SSD1306(const char* device, int addr) : i2c_fd(-1) {
 SSD1306::~SSD1306() {
     if (i2c_fd >= 0) {
         close(i2c_fd);
+        std::clog<<"OK:Close I2C device successfully\n";
     }
 }
 
-bool SSD1306::writeCommand(unsigned char cmd) {
+bool SSD1306::write_command(unsigned char cmd) {
     unsigned char buf[] = {0x00, cmd}; // 控制字节 0x00 = 命令
-    return write(i2c_fd, buf, 2) == 2;
+    if(write(i2c_fd, buf, 2) == 2){
+        std::clog<<"OK:Write command 0x"
+                 <<std::hex<< std::setfill('0') << std::setw(2)
+                 <<(int)cmd<<" successfully\n";
+        return 1;
+    }else{    
+        std::cerr<<"ERROR:Can't write command 0x"
+                 <<std::hex<< std::setfill('0') << std::setw(2)
+                 <<(int)cmd<<"\n";
+        return 0;
+    }
 }
 
-bool SSD1306::writeData(const unsigned char* data, int len) {
+bool SSD1306::write_data(const unsigned char* data, int len) {
     unsigned char* buf = new unsigned char[len + 1];
     buf[0] = 0x40; // 控制字节 0x40 = 数据
     memcpy(buf + 1, data, len);
     bool result = write(i2c_fd, buf, len + 1) == len + 1;
     delete[] buf;
+    if(result){
+        std::clog<<"OK:Write data successfully\n";
+    }else{
+        std::cerr<<"ERROR:Can't write data\n";
+    }
     return result;
 }
 
@@ -64,22 +82,25 @@ bool SSD1306::init() {
     };
 
     for (size_t i = 0; i < sizeof(init_seq); i++) {
-        if (!writeCommand(init_seq[i])) {
-            std::cerr << "Init error: Command " << std::hex << init_seq[i] << "\n";
+        if (!write_command(init_seq[i])) {
+            std::cerr << "Init error: Command " 
+                      <<std::hex<< std::setfill('0') << std::setw(2)
+                      << (int)init_seq[i] << "\n";
             return false;
         }
     }
 
     clear();
-    display();
+    std::clog<<"OK:Init successfully\n";
     return true;
 }
 
 void SSD1306::clear() {
     memset(buffer, 0, sizeof(buffer));
+    this->display();
 }
 
-void SSD1306::setPixel(int x, int y, bool on) {
+void SSD1306::set_pixel(int x, int y, bool on) {
     if (x < 0 || x >= 128 || y < 0 || y >= 64) return;
     int idx = (y / 8) * 128 + x;
     if (on) {
@@ -91,13 +112,13 @@ void SSD1306::setPixel(int x, int y, bool on) {
 
 void SSD1306::display() {
     // 设置起始页和列地址
-    writeCommand(0x21); // 设置列地址
-    writeCommand(0x00); // 起始列
-    writeCommand(127);  // 结束列
+    write_command(0x21); // 设置列地址
+    write_command(0x00); // 起始列
+    write_command(127);  // 结束列
 
-    writeCommand(0x22); // 设置页地址
-    writeCommand(0x00); // 起始页
-    writeCommand(0x07); // 结束页 (64/8 = 8 页)
+    write_command(0x22); // 设置页地址
+    write_command(0x00); // 起始页
+    write_command(0x07); // 结束页 (64/8 = 8 页)
 
-    writeData(buffer, sizeof(buffer));
+    write_data(buffer, sizeof(buffer));
 }

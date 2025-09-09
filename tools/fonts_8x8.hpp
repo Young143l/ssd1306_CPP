@@ -1,7 +1,7 @@
 #ifndef _FONTS_8X8_
 #define _FONTS_8X8_
 
-#include"./point_map_template.h"
+#include"./point_map_template.hpp"
 
 const point_map_8x8 nums[]={
     {

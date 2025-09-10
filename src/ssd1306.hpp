@@ -1,13 +1,15 @@
 #ifndef SSD1306_H
 #define SSD1306_H
 
+#include <cstdint>
+
 class SSD1306 {
 private:
     int i2c_fd;
-    unsigned char buffer[128 * 64 / 8]; // 128x64
+    uint8_t buffer[128 * 64 / 8]; // 128x64
 
-    bool write_command(unsigned char cmd);
-    bool write_data(const unsigned char* data, int len);
+    bool write_command(uint8_t cmd);
+    bool write_data(const uint8_t* data, int len);
 
 public:
     SSD1306(const char* i2c_device = "/dev/i2c-1", int addr = 0x3C);

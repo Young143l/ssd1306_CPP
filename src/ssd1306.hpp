@@ -18,7 +18,7 @@ public:
     bool init();
     void clear();
     void set_pixel(int x, int y, bool on = true);
-    void display(); 
+    bool display(); 
 
 };
 

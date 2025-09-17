@@ -8,20 +8,26 @@
 #include <iomanip>
 #include <cstdint>
 
+#ifdef DEBUG
+#define LOG(a) std::clog<<a;
+#else
+#define LOG(a)
+#endif
+
 SSD1306::SSD1306(const char* device, int addr) : i2c_fd(-1) {
     i2c_fd = open(device, O_RDWR);
     if (i2c_fd < 0) {
-        std::cerr << "ERROR:Can't open I2C device.\n";
+        LOG("ERROR:Can't open I2C device.\n");
         return;
     }
 
     if (ioctl(i2c_fd, I2C_SLAVE, addr) < 0) {
-        std::cerr << "ERROE:Can't set I2C address.\n";
+        LOG("ERROE:Can't set I2C address.\n");
         close(i2c_fd);
         i2c_fd = -1;
         return;
     }
-    std::clog<<"OK:Open I2C device and set it's address successfully.\n";
+    LOG("OK:Open I2C device and set it's address successfully.\n");
 
     memset(buffer, 0, sizeof(buffer));
 }
@@ -29,21 +35,21 @@ SSD1306::SSD1306(const char* device, int addr) : i2c_fd(-1) {
 SSD1306::~SSD1306() {
     if (i2c_fd >= 0) {
         close(i2c_fd);
-        std::clog<<"OK:Close I2C device successfully.\n";
+        LOG("OK:Close I2C device successfully.\n");
     }
 }
 
 bool SSD1306::write_command(uint8_t cmd) {
     uint8_t buf[] = {0x00, cmd}; // 控制字节 0x00 = 命令
     if(write(i2c_fd, buf, 2) == 2){
-        std::clog<<"OK:Write command 0x"
+        LOG("OK:Write command 0x"
                  <<std::hex<< std::setfill('0') << std::setw(2)
-                 <<cmd<<" successfully.\n";
+                 <<(int)cmd<<" successfully.\n");
         return 1;
     }else{    
-        std::cerr<<"ERROR:Can't write command 0x"
+        LOG("ERROR:Can't write command 0x"
                  <<std::hex<< std::setfill('0') << std::setw(2)
-                 <<cmd<<"\n";
+                 <<(int)cmd<<"\n";)
         return 0;
     }
 }
@@ -55,9 +61,9 @@ bool SSD1306::write_data(const uint8_t* data, int len) {
     bool result = write(i2c_fd, buf, len + 1) == len + 1;
     delete[] buf;
     if(result){
-        std::clog<<"OK:Write data successfully.\n";
+        LOG("OK:Write data successfully.\n");
     }else{
-        std::cerr<<"ERROR:Can't write data.\n";
+        LOG("ERROR:Can't write data.\n");
     }
     return result;
 }
@@ -84,22 +90,22 @@ bool SSD1306::init() {
 
     for (size_t i = 0; i < sizeof(init_seq); i++) {
         if (!write_command(init_seq[i])) {
-            std::cerr << "ERROR:Can't init in sending command 0x" 
+            LOG("ERROR:Can't init in sending command 0x" 
                       <<std::hex<< std::setfill('0') << std::setw(2)
-                      << init_seq[i] << ".\n";
+                      <<(int)init_seq[i] << ".\n");
             return false;
         }
     }
 
     clear();
-    std::clog<<"OK:Init successfully.\n";
+    LOG("OK:Init successfully.\n");
     return true;
 }
 
 void SSD1306::clear() {
     memset(buffer, 0, sizeof(buffer));
     this->display();
-    std::clog<<"OK: Clear the screen seccessfully.\n";
+    LOG("OK: Clear the screen seccessfully.\n");
 }
 
 void SSD1306::set_pixel(int x, int y, bool on) {
@@ -110,23 +116,26 @@ void SSD1306::set_pixel(int x, int y, bool on) {
     } else {
         buffer[idx] &= ~(1 << (y % 8));
     }
-    std::clog<<"OK:Set pixel at ("<<std::dec<<x<<","<<y<<") successfully.\n";
+    LOG("OK:Set pixel at ("<<std::dec<<x<<","<<y<<") successfully.\n");
 }
 
-void SSD1306::display() {
+bool SSD1306::display() {
     // 设置起始页和列地址
-    write_command(0x21); // 设置列地址
-    write_command(0x00); // 起始列
-    write_command(127);  // 结束列
+    bool ok=1;
+    ok&=write_command(0x21); // 设置列地址
+    ok&=write_command(0x00); // 起始列
+    ok&=write_command(127);  // 结束列
 
-    write_command(0x22); // 设置页地址
-    write_command(0x00); // 起始页
-    write_command(0x07); // 结束页 (64/8 = 8 页)
+    ok&=write_command(0x22); // 设置页地址
+    ok&=write_command(0x00); // 起始页
+    ok&=write_command(0x07); // 结束页 (64/8 = 8 页)
 
     if(write_data(buffer, sizeof(buffer))){
-        std::clog<<"OK:The screen has been displayed.\n";
+        LOG("OK:The screen has been displayed.\n");
+        ok=1;
     }else{
-        std::clog<<"ERROR:Can't display the screen.\n";
+        LOG("ERROR:Can't display the screen.\n");
+        ok=0;
     }
-
+    return ok;
 }

@@ -9,20 +9,22 @@
 #include <cstdint>
 
 #ifdef DEBUG
-#define LOG(a) std::clog<<a;
+#define ERR(a) std::cerr<<a;
+#define LOG(a) std::cout<<a;
 #else
-#define LOG(a)
+#define ERR(a)
+#define LOD(a)
 #endif
 
 SSD1306::SSD1306(const char* device, int addr) : i2c_fd(-1) {
     i2c_fd = open(device, O_RDWR);
     if (i2c_fd < 0) {
-        LOG("ERROR:Can't open I2C device.\n");
+        ERR("ERROR:Can't open I2C device.\n");
         return;
     }
 
     if (ioctl(i2c_fd, I2C_SLAVE, addr) < 0) {
-        LOG("ERROE:Can't set I2C address.\n");
+        ERR("ERROE:Can't set I2C address.\n");
         close(i2c_fd);
         i2c_fd = -1;
         return;
@@ -47,7 +49,7 @@ bool SSD1306::write_command(uint8_t cmd) {
                  <<(int)cmd<<" successfully.\n");
         return 1;
     }else{    
-        LOG("ERROR:Can't write command 0x"
+        ERR("ERROR:Can't write command 0x"
                  <<std::hex<< std::setfill('0') << std::setw(2)
                  <<(int)cmd<<"\n";)
         return 0;
@@ -63,7 +65,7 @@ bool SSD1306::write_data(const uint8_t* data, int len) {
     if(result){
         LOG("OK:Write data successfully.\n");
     }else{
-        LOG("ERROR:Can't write data.\n");
+        ERR("ERROR:Can't write data.\n");
     }
     return result;
 }
@@ -90,7 +92,7 @@ bool SSD1306::init() {
 
     for (size_t i = 0; i < sizeof(init_seq); i++) {
         if (!write_command(init_seq[i])) {
-            LOG("ERROR:Can't init in sending command 0x" 
+            ERR("ERROR:Can't init in sending command 0x" 
                       <<std::hex<< std::setfill('0') << std::setw(2)
                       <<(int)init_seq[i] << ".\n");
             return false;
@@ -134,7 +136,7 @@ bool SSD1306::display() {
         LOG("OK:The screen has been displayed.\n");
         ok=1;
     }else{
-        LOG("ERROR:Can't display the screen.\n");
+        ERR("ERROR:Can't display the screen.\n");
         ok=0;
     }
     return ok;
